@@ -37,6 +37,24 @@ FuckPlayerActionsAuthority& FuckPlayerActionsAuthority ::getInstance() {
     return instance;
 }
 
+int allow = 0;
+
+LL_TYPE_INSTANCE_HOOK(
+    PlayerTeleportHook,
+    ll::memory::HookPriority::Normal,
+    Player,
+    &Player::$teleportTo,
+    void,
+    ::Vec3 const& pos,
+    bool          shouldStopRiding,
+    int           cause,
+    int           sourceEntityType,
+    bool          keepVelocity
+) {
+    origin(pos, shouldStopRiding, cause, sourceEntityType, keepVelocity);
+    allow = 10;
+}
+
 LL_TYPE_INSTANCE_HOOK(
     PlayerCreditHook,
     ll::memory::HookPriority::Normal,
@@ -63,6 +81,10 @@ LL_TYPE_INSTANCE_HOOK(
         !serverInstance || std::this_thread::get_id() != serverInstance->mServerInstanceThread->get_id())
         return origin(source, packet);
 #endif
+    if (allow) {
+        allow--;
+        return origin(source, packet);
+    }
     auto player = thisFor<NetEventCallback>()->_getServerPlayer(source, packet.mSenderSubId);
     if (!player) return origin(source, packet);
 
