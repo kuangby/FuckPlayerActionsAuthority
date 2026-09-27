@@ -178,6 +178,7 @@ bool FuckPlayerActionsAuthority ::load() {
 
 bool FuckPlayerActionsAuthority ::enable() {
     getSelf().getLogger().debug("Enabling...");
+    PlayerTeleportHook::hook();
     PlayerCreditHook::hook();
     StripOneShotActionsHook::hook();
     // Code for enabling the mod goes here.
