@@ -37,7 +37,7 @@ FuckPlayerActionsAuthority& FuckPlayerActionsAuthority ::getInstance() {
     return instance;
 }
 
-int allow = 0;
+std::unordered_map<std::string, int> allowMap;
 
 LL_TYPE_INSTANCE_HOOK(
     PlayerTeleportHook,
@@ -52,7 +52,7 @@ LL_TYPE_INSTANCE_HOOK(
     bool          keepVelocity
 ) {
     origin(pos, shouldStopRiding, cause, sourceEntityType, keepVelocity);
-    allow = 10;
+    allowMap[this->getRealName()] = 5;
 }
 
 LL_TYPE_INSTANCE_HOOK(
@@ -81,12 +81,13 @@ LL_TYPE_INSTANCE_HOOK(
         !serverInstance || std::this_thread::get_id() != serverInstance->mServerInstanceThread->get_id())
         return origin(source, packet);
 #endif
-    if (allow) {
-        allow--;
-        return origin(source, packet);
-    }
     auto player = thisFor<NetEventCallback>()->_getServerPlayer(source, packet.mSenderSubId);
     if (!player) return origin(source, packet);
+
+    if (auto it = allowMap.find(player->getRealName()); it != allowMap.end()) {
+        if (--it->second <= 0) allowMap.erase(it);
+        return origin(source, packet);
+    }
 
     auto comp = player->mEntityContext->tryGetComponent<ServerPlayerMovementComponent>();
     if (!comp) [[unlikely]]
